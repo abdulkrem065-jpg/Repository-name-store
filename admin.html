@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>تطبيق إدارة متجر الذيباني</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 p-4 pb-20">
+
+<h1 class="text-2xl font-bold mb-6 text-center text-blue-800">📦 إدارة المنتجات</h1>
+
+<div class="bg-white p-6 rounded-2xl shadow-lg mb-8">
+  <h2 class="font-bold mb-4 flex items-center gap-2">
+    <i class="fas fa-plus-circle text-green-500"></i> إضافة منتج جديد
+  </h2>
+  
+  <input id="name" type="text" placeholder="اسم المنتج" class="border w-full p-3 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-blue-400">
+  <input id="price" type="number" placeholder="السعر" class="border w-full p-3 rounded-xl mb-3 outline-none focus:ring-2 focus:ring-blue-400">
+  
+  <label class="block mb-2 text-sm text-gray-600">صورة المنتج:</label>
+  <input id="imageFile" type="file" accept="image/*" class="border w-full p-2 rounded-xl mb-4 bg-gray-50">
+  
+  <button id="saveBtn" onclick="addProduct()" class="bg-blue-600 text-white w-full py-3 rounded-xl font-bold shadow-md active:scale-95 transition-transform">
+    حفظ المنتج في المتجر
+  </button>
+</div>
+
+<h2 class="font-bold mb-4 text-gray-700 px-2">المنتجات المعروضة حالياً:</h2>
+<div id="admin-products-list" class="space-y-3">
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
+import { getFirestore, collection, getDocs, addDoc, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-storage.js";
+
+// إعداداتك (تأكد من مطابقتها لمشروعك)
+const firebaseConfig = {
+  apiKey: "AIzaSyCWhZXcogrux881isvdYdIOhk_aaeJP3fc",
+  authDomain: "al-dhibani-store.firebaseapp.com",
+  projectId: "al-dhibani-store",
+  storageBucket: "al-dhibani-store.appspot.com" // تأكد من إضافة هذا السطر لرفع الصور
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const storage = getStorage(app);
+
+const container = document.getElementById("admin-products-list");
+
+// تحميل المنتجات
+async function loadProducts() {
+  container.innerHTML = "<p class='text-center'>جاري التحميل...</p>";
+  const snap = await getDocs(collection(db, "products"));
+  container.innerHTML = "";
+  
+  snap.forEach((d) => {
+    const p = d.data();
+    container.innerHTML += `
+      <div class="bg-white p-4 rounded-xl shadow-sm flex items-center justify-between border-r-4 border-blue-500">
+        <div class="flex items-center gap-3">
+          <img src="${p.image}" class="w-12 h-12 rounded object-cover">
+          <div>
+            <div class="font-bold text-gray-800">${p.name}</div>
+            <div class="text-sm text-blue-600">${p.price} ريال</div>
+          </div>
+        </div>
+        <div class="flex gap-2">
+           <button onclick="editPrice('${d.id}', ${p.price})" class="text-blue-500 p-2"><i class="fas fa-edit"></i></button>
+           <button onclick="deleteProduct('${d.id}')" class="text-red-500 p-2"><i class="fas fa-trash"></i></button>
+        </div>
+      </div>
+    `;
+  });
+}
+
+// إضافة منتج مع رفع الصورة
+window.addProduct = async function() {
+  const name = document.getElementById("name").value;
+  const price = document.getElementById("price").value;
+  const file = document.getElementById("imageFile").files[0];
+  const btn = document.getElementById("saveBtn");
+
+  if (!name || !price || !file) return alert("يرجى إكمال البيانات واختيار صورة");
+
+  btn.disabled = true;
+  btn.innerText = "جاري الرفع...";
+
+  try {
+    // 1. رفع الصورة إلى Storage
+    const storageRef = ref(storage, 'products/' + file.name + Date.now());
+    const uploadTask = await uploadBytes(storageRef, file);
+    const imageUrl = await getDownloadURL(uploadTask.ref);
+
+    // 2. حفظ البيانات في Firestore
+    await addDoc(collection(db, "products"), {
+      name,
+      price: parseFloat(price),
+      image: imageUrl,
+      createdAt: new Date()
+    });
+
+    alert("تمت الإضافة بنجاح!");
+    location.reload();
+  } catch (error) {
+    console.error(error);
+    alert("حدث خطأ أثناء الرفع");
+  }
+};
+
+window.deleteProduct = async function(id) {
+  if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+    await deleteDoc(doc(db, "products", id));
+    loadProducts();
+  }
+};
+
+window.editPrice = async function(id, oldPrice) {
+  const newPrice = prompt("أدخل السعر الجديد:", oldPrice);
+  if (newPrice && newPrice !== oldPrice) {
+    await updateDoc(doc(db, "products", id), { price: parseFloat(newPrice) });
+    loadProducts();
+  }
+};
+
+loadProducts();
+</script>
+</body>
+</html>
