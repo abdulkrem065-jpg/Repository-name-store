@@ -1,7 +1,9 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// Firebase Config
+/* =========================
+   Firebase Config
+========================= */
 const firebaseConfig = {
   apiKey: "AIzaSyCWhZXcogrux881isvdYdIOhk_aaeJP3fc",
   authDomain: "al-dhibani-store.firebaseapp.com",
@@ -32,7 +34,7 @@ const fallbackProducts = [
 ];
 
 /* =========================
-   تحميل المنتجات (آمن)
+   تحميل المنتجات (آمن 100%)
 ========================= */
 async function loadProducts() {
   const container = document.getElementById("products");
@@ -65,7 +67,7 @@ async function loadProducts() {
 
     container.insertAdjacentHTML("afterbegin", `
       <div class="col-span-full text-center text-red-500 mb-4">
-        تم تشغيل الوضع الاحتياطي (بدون Firebase)
+        تم تشغيل الوضع الاحتياطي (Firebase غير متاح)
       </div>
     `);
   }
@@ -132,9 +134,13 @@ window.addToCart = function (p) {
   else cart.push({ ...p, qty: 1 });
 
   localStorage.setItem("cart", JSON.stringify(cart));
+
   updateCartUI();
 };
 
+/* =========================
+   تحديث واجهة السلة
+========================= */
 function updateCartUI() {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
@@ -174,6 +180,9 @@ function updateCartUI() {
   `;
 }
 
+/* =========================
+   تغيير الكمية
+========================= */
 window.changeQty = function (i, v) {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
 
@@ -187,7 +196,7 @@ window.changeQty = function (i, v) {
 };
 
 /* =========================
-   إرسال الطلب
+   إرسال الطلب واتساب
 ========================= */
 window.sendOrder = function () {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
@@ -211,7 +220,7 @@ window.sendOrder = function () {
 };
 
 /* =========================
-   سلايدر آمن
+   سلايدر
 ========================= */
 const slides = ["ad1.jpg", "ad2.jpg", "ad3.jpg"];
 
