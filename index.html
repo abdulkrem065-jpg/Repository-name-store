@@ -4,124 +4,98 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>متجر الذيباني</title>
+
+  <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <!-- خط -->
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
+
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap');
-     
-    :root {
-      --main-blue: #2563eb;
-      --soft-bg: #f8fafc;
+    body {
+      font-family: 'Tajawal', sans-serif;
+      background: #f8fafc;
     }
 
-    body { 
-      font-family: 'Tajawal', sans-serif; 
-      background-color: var(--soft-bg);
-    }
-
-    /* تنسيق كرت المنتج */
     .product-card {
       background: white;
-      border-radius: 20px;
-      transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-      border: 1px solid #edf2f7;
+      border-radius: 16px;
+      transition: 0.3s;
     }
 
     .product-card:hover {
-      transform: translateY(-10px);
-      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      transform: translateY(-5px);
+      box-shadow: 0 10px 20px rgba(0,0,0,0.1);
     }
 
-    /* السلايدر */
     #sliderImg {
-      filter: brightness(0.9);
-      transition: opacity 0.8s ease-in-out;
-    }
-
-    /* زر البحث */
-    .search-btn {
-      background: var(--main-blue);
-      color: white;
-      border-radius: 12px;
-      transition: background 0.3s;
-    }
-
-    .search-btn:hover { background: #1d4ed8; }
-
-    /* أنيميشن للسلة */
-    #cart-count {
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0% { transform: scale(1); }
-      50% { transform: scale(1.1); }
-      100% { transform: scale(1); }
+      transition: opacity 0.5s ease;
     }
   </style>
 </head>
 
 <body>
 
-<header class="bg-white/80 backdrop-blur-md shadow-sm sticky top-0 z-50">
-  <div class="container mx-auto px-4 py-3 flex justify-between items-center">
-    <img src="logo.png" class="h-12 md:h-16 pointer-events-none" alt="Logo">
-    <div class="relative cursor-pointer group" onclick="toggleCart()">
-      <i class="fas fa-shopping-basket text-2xl text-blue-600 group-hover:text-blue-800 transition-colors"></i>
-      <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-[10px] font-bold rounded-full h-5 w-5 flex items-center justify-center border-2 border-white">0</span>
-    </div>
+<!-- الهيدر -->
+<header class="bg-white shadow p-3 flex justify-between items-center">
+  <h1 class="font-bold text-xl text-blue-600">متجر الذيباني</h1>
+
+  <div onclick="toggleCart()" class="relative cursor-pointer">
+    <i class="fas fa-shopping-cart text-2xl text-blue-600"></i>
+    <span id="cart-count" class="absolute -top-2 -right-2 bg-red-500 text-white text-xs px-2 rounded-full">0</span>
   </div>
 </header>
 
-<section class="relative h-56 md:h-80 overflow-hidden shadow-lg m-4 rounded-3xl">
-  <img id="sliderImg" class="w-full h-full object-cover">
-  <div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-8">
-    <h2 class="text-white text-2xl md:text-4xl font-bold">عروض حصرية في الذيباني</h2>
-    <p class="text-gray-200 text-sm md:text-lg">كل ما تحتاجه في مكان واحد</p>
-  </div>
+<!-- السلايدر -->
+<section class="m-4 rounded-xl overflow-hidden">
+  <img id="sliderImg" src="ad1.jpg" class="w-full h-48 object-cover">
 </section>
 
-<div class="container mx-auto px-4 mb-8">
-  <div class="flex gap-2 max-w-2xl mx-auto bg-white p-2 rounded-2xl shadow-sm border border-gray-100">
-    <div class="relative flex-1">
-      <i class="fas fa-search absolute right-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
-      <input id="search" type="text" placeholder="ابحث عن منتجك المفضل..." 
-        class="w-full pr-12 pl-4 py-3 border-none outline-none text-gray-700 bg-transparent">
-    </div>
-    <button onclick="search()" class="search-btn px-6 py-3 font-bold">
+<!-- البحث -->
+<div class="p-4">
+  <div class="flex gap-2">
+    <input id="search" type="text" placeholder="ابحث عن منتج..."
+      class="flex-1 p-3 border rounded-xl">
+
+    <button onclick="search()" class="bg-blue-600 text-white px-5 rounded-xl">
       بحث
     </button>
   </div>
 </div>
 
-<main class="container mx-auto px-4 pb-20">
-  <div id="products" class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
-    </div>
+<!-- المنتجات -->
+<main class="p-4">
+  <div id="products" class="grid grid-cols-2 md:grid-cols-3 gap-4"></div>
 </main>
 
-<div id="cart-drawer" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-[60] hidden transition-opacity" onclick="toggleCart()">
-  <div class="fixed left-0 top-0 h-full w-full max-w-sm bg-white shadow-2xl p-6 flex flex-col" onclick="event.stopPropagation()">
-    <div class="flex justify-between items-center mb-6 border-b pb-4">
-      <h2 class="text-xl font-bold flex items-center gap-2">
-        <i class="fas fa-shopping-cart text-blue-600"></i> سلة المشتريات
-      </h2>
-      <button onclick="toggleCart()" class="text-gray-400 hover:text-red-500 text-2xl">&times;</button>
-    </div>
-    
-    <div id="cart-items-container" class="flex-1 overflow-y-auto space-y-4 pr-2">
-      </div>
+<!-- السلة -->
+<div id="cart-drawer" class="fixed inset-0 bg-black/50 hidden" onclick="toggleCart()">
+  <div class="bg-white w-80 h-full p-4" onclick="event.stopPropagation()">
 
-    <div id="cart-footer" class="mt-auto pt-6 border-t border-gray-100">
-      </div>
+    <h2 class="text-xl font-bold mb-4">السلة</h2>
+
+    <div id="cart-items-container" class="space-y-3"></div>
+
+    <div id="cart-footer" class="mt-4"></div>
+
+    <button onclick="toggleCart()" class="mt-4 text-red-500">
+      إغلاق
+    </button>
+
   </div>
 </div>
 
-<script type="module" src="app.js"></script>
+<!-- JS -->
+<script src="app.js"></script>
+
 <script>
   function toggleCart() {
-    const drawer = document.getElementById('cart-drawer');
-    drawer.classList.toggle('hidden');
+    document.getElementById("cart-drawer").classList.toggle("hidden");
   }
 </script>
+
 </body>
 </html>
