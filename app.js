@@ -1,7 +1,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-app.js";
 import { getFirestore, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js";
 
-// إعدادات Firebase (استخدم بياناتك الحقيقية هنا)
+// Firebase Config
 const firebaseConfig = {
   apiKey: "AIzaSyCWhZXcogrux881isvdYdIOhk_aaeJP3fc",
   authDomain: "al-dhibani-store.firebaseapp.com",
@@ -13,162 +13,230 @@ const db = getFirestore(app);
 
 let products = [];
 
-// تحميل المنتجات فور تشغيل الصفحة
+/* =========================
+   منتجات احتياطية (Fallback)
+========================= */
+const fallbackProducts = [
+  {
+    id: "1",
+    name: "هاتف تجريبي",
+    price: 50000,
+    image: "https://via.placeholder.com/300"
+  },
+  {
+    id: "2",
+    name: "سماعات تجريبية",
+    price: 15000,
+    image: "https://via.placeholder.com/300"
+  }
+];
+
+/* =========================
+   تحميل المنتجات (آمن)
+========================= */
 async function loadProducts() {
   const container = document.getElementById("products");
-  container.innerHTML = `<div class="col-span-full text-center py-10 text-gray-500">جاري جلب المنتجات...</div>`;
-  
+
+  if (!container) return;
+
+  container.innerHTML = `
+    <div class="col-span-full text-center py-10 text-gray-500">
+      جاري تحميل المنتجات...
+    </div>
+  `;
+
   try {
     const snap = await getDocs(collection(db, "products"));
+
     products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+
+    if (products.length === 0) {
+      products = fallbackProducts;
+    }
+
     render(products);
+
   } catch (error) {
-    container.innerHTML = `<div class="col-span-full text-center text-red-500">تأكد من إعدادات Firebase Storage و Firestore</div>`;
+    console.error("Firebase Error:", error);
+
+    products = fallbackProducts;
+
+    render(products);
+
+    container.insertAdjacentHTML("afterbegin", `
+      <div class="col-span-full text-center text-red-500 mb-4">
+        تم تشغيل الوضع الاحتياطي (بدون Firebase)
+      </div>
+    `);
   }
 }
 
-// عرض المنتجات بتصميم CSS المحدث
+/* =========================
+   عرض المنتجات
+========================= */
 function render(list) {
   const container = document.getElementById("products");
+  if (!container) return;
+
   container.innerHTML = "";
-  
-  if(list.length === 0) {
-    container.innerHTML = `<p class="col-span-full text-center text-gray-400">لا توجد منتجات مطابقة للبحث</p>`;
+
+  if (!list || list.length === 0) {
+    container.innerHTML = `
+      <p class="col-span-full text-center text-gray-400">
+        لا توجد منتجات
+      </p>`;
     return;
   }
 
   list.forEach(p => {
     container.innerHTML += `
       <div class="product-card p-3 flex flex-col h-full">
-        <img src="${p.image}" class="h-40 w-full object-cover rounded-2xl mb-3 shadow-sm">
-        <h3 class="font-bold text-gray-800 text-sm md:text-base line-clamp-1">${p.name}</h3>
-        <div class="mt-auto">
-          <p class="text-blue-600 font-bold my-2">${p.price} ريال</p>
-          <button onclick='addToCart(${JSON.stringify(p)})'
-            class="bg-blue-600 hover:bg-black text-white w-full py-2 rounded-xl transition-all text-sm font-bold shadow-md active:scale-95">
-            <i class="fas fa-plus ml-1"></i> أضف للسلة
-          </button>
-        </div>
+        <img src="${p.image}" class="h-40 w-full object-cover rounded-2xl mb-3">
+        <h3 class="font-bold text-sm">${p.name}</h3>
+        <p class="text-blue-600 font-bold my-2">${p.price} ريال</p>
+
+        <button onclick='addToCart(${JSON.stringify(p)})'
+          class="bg-blue-600 text-white w-full py-2 rounded-xl">
+          إضافة للسلة
+        </button>
       </div>
     `;
   });
 }
 
-// وظيفة البحث المرتبطة بالزر
-window.search = function() {
-  const v = document.getElementById("search").value.toLowerCase();
-  const filtered = products.filter(p => p.name.toLowerCase().includes(v));
+/* =========================
+   البحث
+========================= */
+window.search = function () {
+  const input = document.getElementById("search");
+  if (!input) return;
+
+  const value = input.value.toLowerCase();
+
+  const filtered = products.filter(p =>
+    p.name.toLowerCase().includes(value)
+  );
+
   render(filtered);
 };
 
-// إدارة السلة
-window.addToCart = function(p) {
+/* =========================
+   السلة (آمنة)
+========================= */
+window.addToCart = function (p) {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
   let item = cart.find(i => i.id === p.id);
 
-  if (item) { item.qty++; } 
-  else { cart.push({ ...p, qty: 1 }); }
+  if (item) item.qty++;
+  else cart.push({ ...p, qty: 1 });
 
   localStorage.setItem("cart", JSON.stringify(cart));
   updateCartUI();
-  
-  // تنبيه بسيط عند الإضافة
-  const btn = event.target;
-  const originalText = btn.innerHTML;
-  btn.innerHTML = "تمت الإضافة! ✅";
-  setTimeout(() => btn.innerHTML = originalText, 1000);
 };
 
 function updateCartUI() {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
+  const count = document.getElementById("cart-count");
   const container = document.getElementById("cart-items-container");
   const footer = document.getElementById("cart-footer");
-  const count = document.getElementById("cart-count");
 
-  count.innerText = cart.reduce((s, i) => s + i.qty, 0);
+  if (count)
+    count.innerText = cart.reduce((s, i) => s + i.qty, 0);
+
+  if (!container || !footer) return;
 
   if (cart.length === 0) {
-    container.innerHTML = `<div class="text-center py-20 text-gray-400"><i class="fas fa-ghost text-4xl mb-2"></i><p>السلة فارغة</p></div>`;
+    container.innerHTML = "<p class='text-center text-gray-400'>السلة فارغة</p>";
     footer.innerHTML = "";
     return;
   }
 
   let total = 0;
-  container.innerHTML = cart.map((p, index) => {
+
+  container.innerHTML = cart.map((p, i) => {
     total += p.price * p.qty;
+
     return `
-      <div class="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl border border-gray-100">
-        <img src="${p.image}" class="w-14 h-14 object-cover rounded-lg">
-        <div class="flex-1">
-          <h4 class="font-bold text-xs line-clamp-1">${p.name}</h4>
-          <p class="text-blue-600 font-bold text-xs">${p.price} ريال</p>
-          <div class="flex items-center gap-3 mt-1">
-            <button onclick="changeQty(${index}, -1)" class="w-6 h-6 bg-white border rounded shadow-sm">-</button>
-            <span class="text-xs font-bold">${p.qty}</span>
-            <button onclick="changeQty(${index}, 1)" class="w-6 h-6 bg-white border rounded shadow-sm">+</button>
-          </div>
-        </div>
+      <div class="p-2 border rounded">
+        <p class="font-bold">${p.name}</p>
+        <p>${p.qty} × ${p.price}</p>
       </div>
     `;
   }).join("");
 
   footer.innerHTML = `
-    <div class="flex justify-between items-center mb-4">
-      <span class="text-gray-500">إجمالي الطلب:</span>
-      <span class="text-xl font-bold text-blue-600">${total} ريال</span>
-    </div>
-    <button onclick="sendOrder()" class="w-full bg-green-500 hover:bg-green-600 text-white py-4 rounded-2xl font-bold shadow-lg shadow-green-200 transition-all flex items-center justify-center gap-2">
-      <i class="fab fa-whatsapp text-xl"></i> إرسال الطلب الآن
+    <div class="font-bold mb-2">الإجمالي: ${total} ريال</div>
+    <button onclick="sendOrder()" class="bg-green-500 text-white w-full py-3 rounded">
+      إرسال الطلب
     </button>
   `;
 }
 
-window.changeQty = function(i, v) {
+window.changeQty = function (i, v) {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
   cart[i].qty += v;
-  if(cart[i].qty <= 0) cart.splice(i, 1);
+
+  if (cart[i].qty <= 0) cart.splice(i, 1);
+
   localStorage.setItem("cart", JSON.stringify(cart));
+
   updateCartUI();
 };
 
-// إرسال الطلب وتصفير السلة
-window.sendOrder = function() {
+/* =========================
+   إرسال الطلب
+========================= */
+window.sendOrder = function () {
   let cart = JSON.parse(localStorage.getItem("cart")) || [];
+
   if (cart.length === 0) return;
 
-  let msg = "🛒 *طلب جديد من متجر الذيباني*%0A%0A";
+  let msg = "طلب جديد:%0A";
   let total = 0;
+
   cart.forEach(p => {
-    msg += `• *${p.name}* (${p.qty} حبة) = ${p.price * p.qty} ريال%0A`;
+    msg += `${p.name} - ${p.qty} × ${p.price}%0A`;
     total += p.price * p.qty;
   });
-  msg += `%0A💰 *الإجمالي: ${total} ريال*`;
+
+  msg += `%0Aالإجمالي: ${total}`;
 
   window.open(`https://wa.me/967770493341?text=${msg}`, "_blank");
 
-  // --- تصفير السلة بعد تقديم الطلب ---
   localStorage.removeItem("cart");
   updateCartUI();
-  toggleCart(); // إغلاق نافذة السلة
 };
 
-// السلايدر
+/* =========================
+   سلايدر آمن
+========================= */
 const slides = ["ad1.jpg", "ad2.jpg", "ad3.jpg"];
-let idx = 0;
+
 function startSlider() {
   const img = document.getElementById("sliderImg");
-  if(!img) return;
+  if (!img) return;
+
+  let i = 0;
+
   setInterval(() => {
     img.style.opacity = 0;
+
     setTimeout(() => {
-      img.src = slides[idx];
+      img.src = slides[i];
       img.style.opacity = 1;
-      idx = (idx + 1) % slides.length;
+      i = (i + 1) % slides.length;
     }, 500);
   }, 4000);
 }
 
-// التشغيل الابتدائي
-loadProducts();
-updateCartUI();
-startSlider();
+/* =========================
+   تشغيل آمن
+========================= */
+window.addEventListener("DOMContentLoaded", () => {
+  loadProducts();
+  updateCartUI();
+  startSlider();
+});
